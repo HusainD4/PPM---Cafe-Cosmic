@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>COSMIC Coffee Shop - Menu</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+<header>
+    {% include 'assets/navbar.html' %}
+</header>
+
+<main>
+    <section class="page-header content-section">
+        <h1 class="hidden">Peta Rasa Kosmik</h1>
+        <p class="hidden">Temukan minuman favorit Anda di antara bintang-bintang.</p>
+    </section>
+
+    <section id="full-menu" class="content-section">
+        <div class="menu-grid">
+            <div class="menu-card hidden">
+                <img src="https://i.ibb.co/6yVzZgC/galaxy-latte.jpg" alt="Galaxy Latte" />
+                <div class="card-content">
+                    <h3>Galaxy Latte</h3>
+                    <p>Espresso dengan susu steam dan sentuhan sirup vanilla kosmik.</p>
+                    <span class="price">Rp 32.000</span>
+                </div>
+            </div>
+            <div class="menu-card hidden">
+                <img src="https://i.ibb.co/Y0FrNqw/meteor-mocha.jpg" alt="Meteor Mocha" />
+                <div class="card-content">
+                    <h3>Meteor Mocha</h3>
+                    <p>Perpaduan cokelat pekat dan espresso yang menghantam lidah.</p>
+                    <span class="price">Rp 35.000</span>
+                </div>
+            </div>
+            <div class="menu-card hidden">
+                <img src="https://i.ibb.co/hM9gSgV/stardust-americano.jpg" alt="Stardust Americano" />
+                <div class="card-content">
+                    <h3>Stardust Americano</h3>
+                    <p>Kopi hitam klasik dengan taburan "debu bintang" yang manis.</p>
+                    <span class="price">Rp 28.000</span>
+                </div>
+            </div>
+            <div class="menu-card hidden">
+                <img src="https://i.ibb.co/tYHkRSc/nebula-tea.jpg" alt="Nebula Tea" />
+                <div class="card-content">
+                    <h3>Nebula Tea</h3>
+                    <p>Teh bunga telang yang berubah warna dengan perasan lemon.</p>
+                    <span class="price">Rp 25.000</span>
+                </div>
+            </div>
+            <div class="menu-card hidden">
+                <img src="https://i.ibb.co/Qn3ySxq/black-hole-espresso.jpg" alt="Black Hole Espresso" />
+                <div class="card-content">
+                    <h3>Black Hole Espresso</h3>
+                    <p>Satu shot espresso pekat yang menarik semua rasa.</p>
+                    <span class="price">Rp 20.000</span>
+                </div>
+            </div>
+            <div class="menu-card hidden">
+                <img src="https://i.ibb.co/3cq2wP5/milky-way-macchiato.jpg" alt="Milky Way Macchiato" />
+                <div class="card-content">
+                    <h3>Milky Way Macchiato</h3>
+                    <p>Lapisan susu, espresso, dan busa yang lembut seperti galaksi.</p>
+                    <span class="price">Rp 33.000</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    {% include 'assets/footer.html' %}
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

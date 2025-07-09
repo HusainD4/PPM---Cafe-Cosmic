@@ -1,0 +1,22 @@
+<nav class="navbar">
+    <a href="{{ url_for('index') }}" class="logo">COSMIC</a>
+    <ul class="nav-menu">
+        <li class="nav-item">
+            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Beranda</a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}active{% endif %}">Tentang Kami</a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('menu') }}" class="nav-link {% if request.endpoint == 'menu' %}active{% endif %}">Menu</a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('admin_login') }}" class="nav-link {% if request.endpoint == 'admin_login' %}active{% endif %}">Admin</a>
+        </li>
+    </ul>
+    <div class="hamburger">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </div>
+</nav>

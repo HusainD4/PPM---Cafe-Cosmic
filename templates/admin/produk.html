@@ -1,0 +1,46 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<h2>Daftar Produk</h2>
+<table>
+  <thead>
+    <tr>
+      <th>ID Produk</th>
+      <th>Nama Produk</th>
+      <th>Deskripsi</th>
+      <th>Harga</th>
+      <th>Gambar</th>
+      <th>Ditambahkan Oleh</th>
+      <th>Aksi</th>  <!-- Tambah kolom Aksi -->
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in produk %}
+    <tr>
+      <td>{{ p.id_produk }}</td>
+      <td>{{ p.nama_produk }}</td>
+      <td>{{ p.deskripsi_produk }}</td>
+      <td>{{ p.harga_produk }}</td>
+      <td>
+        {% if p.gambar %}
+          <a href="{{ p.gambar }}" target="_blank">Lihat Gambar</a>
+        {% else %}
+          Tidak ada gambar
+        {% endif %}
+      </td>
+      <td>{{ p.added_by or 'Unknown' }}</td>
+      <td>
+        <!-- Link Edit -->
+        <a href="{{ url_for('admin_edit_produk', id_produk=p.id_produk) }}">Edit</a> | 
+        <!-- Link Hapus, bisa pakai konfirmasi JS -->
+        <a href="{{ url_for('admin_delete_produk', id_produk=p.id_produk) }}" onclick="return confirm('Yakin ingin menghapus produk ini?');">Hapus</a>
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="7">Tidak ada produk.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

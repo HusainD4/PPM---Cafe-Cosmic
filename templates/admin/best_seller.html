@@ -1,0 +1,73 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<h2>Best Seller & Promo Management</h2>
+
+<form method="POST" action="{{ url_for('admin_update_interaktif') }}">
+  <table border="1" cellpadding="5" cellspacing="0" class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Nama Produk</th>
+        <th>Harga Asli</th>
+        <th>Status Interaktif</th>
+        <th>Harga Promo</th>
+        <th>Tanggal Mulai Promo</th>
+        <th>Tanggal Berakhir Promo</th>
+        <th>Status di Database Best Seller</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in produk %}
+      <tr>
+        <td>{{ p.nama_produk }}</td>
+        <td>{{ p.harga_produk }}</td>
+
+        <td>
+          <select name="interaktif_{{ p.id_produk }}" class="form-select interaktif-select" data-id="{{ p.id_produk }}">
+            <option value="biasa" {% if p.interaktif == 'biasa' %}selected{% endif %}>Biasa</option>
+            <option value="promo" {% if p.interaktif == 'promo' %}selected{% endif %}>Promo</option>
+            <option value="best seller" {% if p.interaktif == 'best seller' %}selected{% endif %}>Best Seller</option>
+          </select>
+        </td>
+
+        <td>
+          <input type="number" step="0.01" name="harga_promo_{{ p.id_produk }}" value="{{ p.harga_promo or '' }}" class="form-control harga-promo" {% if p.interaktif != 'promo' %}readonly{% endif %}>
+        </td>
+
+        <td>
+          <input type="date" name="tanggal_mulai_{{ p.id_produk }}" value="{{ p.tanggal_mulai or '' }}" class="form-control tanggal-mulai" {% if p.interaktif != 'promo' %}readonly{% endif %}>
+        </td>
+
+        <td>
+          <input type="date" name="tanggal_berakhir_{{ p.id_produk }}" value="{{ p.tanggal_berakhir or '' }}" class="form-control tanggal-berakhir" {% if p.interaktif != 'promo' %}readonly{% endif %}>
+        </td>
+
+        <td>
+          {% if p.is_best_seller %}
+            <span class="badge bg-success">Tersimpan di Best Seller</span>
+          {% else %}
+            <span class="badge bg-secondary">Tidak Ada</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <br>
+  <button type="submit" class="btn btn-primary">Update Status</button>
+</form>
+
+<script>
+  // Disable/enable input promo fields sesuai pilihan interaktif
+  document.querySelectorAll('.interaktif-select').forEach(select => {
+    select.addEventListener('change', (e) => {
+      const id = e.target.dataset.id;
+      const isPromo = e.target.value === 'promo';
+      document.querySelector(`input[name='harga_promo_${id}']`).readOnly = !isPromo;
+      document.querySelector(`input[name='tanggal_mulai_${id}']`).readOnly = !isPromo;
+      document.querySelector(`input[name='tanggal_berakhir_${id}']`).readOnly = !isPromo;
+    });
+  });
+</script>
+
+{% endblock %}

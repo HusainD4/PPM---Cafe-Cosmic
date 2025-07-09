@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>COSMIC Coffee Shop - Tentang Kami</title>
+    <!-- Panggil CSS via url_for -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+<header>
+    {% include 'assets/navbar.html' %}
+</header>
+
+<main>
+    <section class="page-header content-section">
+        <h1 class="hidden">Kisah Kami</h1>
+        <p class="hidden">Perjalanan dari Biji Kopi hingga ke Bintang.</p>
+    </section>
+
+    <section class="content-section about-content">
+        <div class="about-text hidden">
+            <h2>Misi Antargalaksi Kami</h2>
+            <p>COSMIC lahir dari mimpi untuk menciptakan sebuah tempat di mana imajinasi dan kafein bertemu. Kami percaya bahwa setiap cangkir kopi adalah sebuah perjalanan, dan kami ingin membawa Anda dalam petualangan ke sudut-sudut tergelap galaksi yang penuh cita rasa.</p>
+            <p>Kami hanya menggunakan biji kopi pilihan dari berbagai planet (sumber lokal terbaik) dan meraciknya dengan teknik presisi sekelas misi luar angkasa. Tujuannya sederhana: menyajikan kopi luar biasa dalam suasana yang juga luar biasa.</p>
+        </div>
+        <div class="about-image hidden">
+            <img src="{{ url_for('static', filename='images/astronaut-hero.png') }}" alt="Interior Cosmic Coffee" />
+        </div>
+    </section>
+</main>
+
+<footer>
+    {% include 'assets/footer.html' %}
+</footer>
+
+<!-- Panggil JS via url_for -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login Admin - COSMIC Coffee Shop</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" />
+</head>
+<body>
+    <main>
+        <div class="login-container">
+            <h2>Login Admin</h2>
+
+            <!-- Flash message jika ada -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('admin_login') }}">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Masukkan username" required autocomplete="username" />
+
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Masukkan password" required autocomplete="current-password" />
+
+                <button type="submit">Masuk</button>
+            </form> 
+
+
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>
