@@ -1,0 +1,37 @@
+{% extends 'admin/base.html' %}
+{% block title %}Dashboard Admin{% endblock %}
+
+{% block content %}
+<div class="dashboard-container mt-5">
+    <h2 class="dashboard-title mb-4">Dashboard Admin</h2>
+    <!-- ALERT ASTRONOT -->
+    <div class="alert alert-info d-flex align-items-center shadow p-3 mb-4 rounded" role="alert" style="background: linear-gradient(to right, #0f2027, #203a43, #2c5364); color: #fff;">
+        <img src="https://cdn-icons-png.flaticon.com/512/3212/3212608.png" alt="astronot" width="40" class="me-3" style="filter: drop-shadow(0 0 4px #fff);">
+        <div>
+            <strong>Halo, Komandan!</strong> Kelola produkmu dengan baik agar toko kamu tetap <em>galactic-level!</em>
+        </div>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="dashboard-card card-produk bg-primary text-white shadow">
+                <div class="dashboard-card-body card-body">
+                    <h5 class="dashboard-card-title" style="text-align: center;">Total Produk</h5><br>
+                    <p class="dashboard-card-count h3" style="text-align: center;font-size: 50px;">{{ total_produk }}</p><br><br>
+                    <a href="{{ url_for('admin_produk') }}" class="dashboard-btn btn btn-light btn-sm mt-2">Lihat Produk</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="dashboard-card card-bestseller bg-success text-white shadow">
+                <div class="dashboard-card-body card-body">
+                    <h5 class="dashboard-card-title" style="text-align: center">Best Seller</h5><br>
+                    <p class="dashboard-card-count h3" style="text-align: center;font-size: 50px;">{{ total_best_seller }}</p><br><br>
+                    <a href="{{ url_for('admin_best_seller') }}" class="dashboard-btn btn btn-light btn-sm mt-2">Lihat Best Seller</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

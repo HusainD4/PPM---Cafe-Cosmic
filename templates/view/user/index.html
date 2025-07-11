@@ -2,51 +2,223 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>COSMIC Coffee Shop - Beranda</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
 </head>
 <body>
 
-<header>
-    {% include 'assets/navbar.html' %}
-</header>
+    <!-- Navbar -->
+    <header>
+        {% include 'assets/navbar.html' %}
+    </header>
 
-<main>
-    <section id="hero">
-        <div class="hero-content">
-            <h1 class="hidden">Selamat Datang di COSMIC</h1>
-            <p class="hidden">Pengalaman Minum Kopi Lintas Galaksi.</p>
-            <a href="{{ url_for('index') }}#menu" class="cta-button hidden">Jelajahi Menu Kami</a>
-        </div>
-        <div class="hero-image hidden">
-            <img src="{{ url_for('static', filename='images/logo bg biru.png') }}" alt="Astronot melayang dengan kopi" />
-        </div>
-    </section>
+    <!-- Konten Utama -->
+    <main>
 
-    <section id="featured" class="content-section">
-        <h2 class="hidden">Menu Pilihan</h2>
-        <div class="featured-container">
-            {% for p in produk %}
-            <div class="featured-card hidden">
-                {% if p.gambar %}
-                <img src="{{ p.gambar }}" alt="{{ p.nama_produk }}" />
-                {% else %}
-                <img src="{{ url_for('static', filename='images/default-product.png') }}" alt="No image" />
-                {% endif %}
-                <h3>{{ p.nama_produk }}</h3>
-                <p>{{ p.deskripsi_produk }}</p>
-                <p><strong>Harga:</strong> Rp {{ "{:,.2f}".format(p.harga_produk) }}</p>
+        <!-- Hero Section -->
+        <section id="hero">
+            <div class="hero-content hidden">
+                <h1 class="shine-text"><i class="fas fa-user-astronaut"></i> Selamat Datang di COSMIC</h1>
+                <p class="shine-text">Pengalaman Minum Kopi Lintas Galaksi.</p><br>
+                <a href="#featured" class="cta-button">Jelajahi Menu Kami</a>
             </div>
-            {% endfor %}
+            <div class="hero-image hidden">
+                <img class="animated-border"  src="{{ url_for('static', filename='images/logo_bg_biru.png') }}" alt="Astronot melayang dengan kopi" />
+            </div>
+        </section>
+
+<br><br><br><br><br>
+        <!-- Tentang Kami + Daftar Menu (Brosur) -->
+        <section id="about-and-brosur" class="content-section">
+            
+        <div class="container hidden about-brosur-wrapper">
+            
+        <!-- Tentang Kami (Box) -->
+        <div class="about-section content-box">
+            <h2 style="color: #003b3b;"><i class="fas fa-user-astronaut"></i> Tentang COSMIC</h2><br>
+
+            <div class="about-container">
+                <!-- Floating Astronaut Animation -->
+                <div class="astronaut-wrapper">
+                    <img src="{{ url_for('static', filename='images/logo_bg_biru.png') }}" style="border-radius: 100%;" alt="Astronaut" class="astronaut-float">
+                </div>
+
+                <!-- Description -->
+                <div class="about-text">
+                    <p>
+                        <strong style="color: black;">COSMIC Coffee Cup</strong> adalah tempat nongkrong bertema luar angkasa yang menghadirkan rasa kopi terbaik dari berbagai galaksi.
+                        Kami menggabungkan suasana futuristik dengan cita rasa klasik untuk pengalaman ngopi yang unik dan berkesan.
+                    </p><br>
+                    <p>
+                        Dengan interior bernuansa kosmos, aroma kopi yang menggoda, dan pelayanan ramah, COSMIC menjadi tempat ideal untuk melepas penat, bertemu teman,
+                        atau bekerja dengan suasana yang inspiratif. Kami juga menyediakan berbagai menu minuman dan camilan yang cocok untuk semua kalangan.
+                    </p><br>
+                    <p>
+                        Kami percaya bahwa setiap cangkir kopi adalah perjalanan menuju bintang. Bergabunglah bersama kami dan rasakan kenikmatan luar biasa
+                        dalam setiap tegukan. COSMIC bukan sekadar coffee shop — ini adalah galaksi rasa dan pengalaman.
+                    </p>
+                </div>
+            </div>
         </div>
-    </section>
-</main>
 
-<footer>
-    {% include 'assets/footer.html' %}
-</footer>
 
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+            <!-- Daftar Menu (Brosur) (Box) -->
+            <div class="brosur-section content-box" style="margin-right: 25px;">
+                <h2 style="color: #003b3b;">
+                    <i class="fas fa-image"></i> Daftar Menu
+                </h2>
+                <br><br><br>
+                <div class="brosur-grid">
+                    {% if brosur %}
+                        {% for br in brosur %}
+                            <div class="brosur-item">
+                                <img 
+                                    src="{{ url_for('static', filename=br.gambar) }}" 
+                                    alt="Gambar Brosur {{ loop.index }}" 
+                                    loading="lazy"
+                                    onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/brosur.png') }}';"
+                                    class="brosur-image"
+                                >
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-menu-msg">Belum ada gambar menu tersedia.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+
+        </div>
+        <br><br><br>
+        <br>
+        </section>
+
+
+
+
+        <!-- Menu Unggulan -->
+        <section id="featured" class="content-section">
+            <div class="container hidden">
+                <h2><i class="fas fa-mug-hot"></i> Menu Pilihan</h2>
+                <div class="featured-container">
+                    {% if produk %}
+                        {% for p in produk %}
+                            <div class="featured-card">
+                                <div class="card-image-wrapper">
+                                    <img src="{{ p.gambar or url_for('static', filename='images/default-product.png') }}" alt="{{ p.nama_produk }}">
+                                </div>
+                                <h3>{{ p.nama }}</h3>
+                                <p class="deskripsi">{{ p.deskripsi }}</p>
+                                <p class="harga"><strong>Harga:</strong> Rp {{ "{:,.0f}".format(p.harga or 0) }}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-menu-msg">Menu belum tersedia. Silakan kunjungi kembali nanti!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+                <!-- Best Seller -->
+        <section id="best-seller" class="content-section-best">
+        <div class="container hidden best">
+            <h2><i class="fas fa-fire"></i>  Menu Best Seller</h2>
+            <div class="carousel-wrapper" onmousedown="pauseCarousel()" onmouseup="resumeCarousel()" ontouchstart="pauseCarousel()" ontouchend="resumeCarousel()">
+            <div class="carousel-track" id="carouselTrack">
+                {% if best_seller %}
+                {% for i in range(2) %} {# Duplicate for infinite loop #}
+                    {% for b in best_seller %}
+                    <div class="featured-card-best">
+                        <div class="card-image-wrapper">
+                        <img src="{{ b.gambar or url_for('static', filename='images/default-product.png') }}" alt="{{ b.nama_produk }}">
+                        <span class="badge best-seller-badge">🔥 Terlaris</span>
+                        </div>
+                        <div class="card-content">
+                        <h3>{{ b.nama }}</h3>
+                        <p class="desc">
+                            {{ b.deskripsi[:100] }}{% if b.deskripsi|length > 100 %}... <a href="#produk">selengkapnya</a>{% endif %}
+                        </p>
+                        <p><strong>Harga:</strong> Rp {{ "{:,.0f}".format(b.harga or 0) }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endfor %}
+                {% else %}
+                <p class="no-menu-msg">Belum ada produk terlaris saat ini.</p>
+                {% endif %}
+            </div>
+            </div>
+        </div>
+        </section>
+
+
+
+
+
+
+
+
+        <!-- Lokasi & Kontak -->
+        <section id="location-contact" class="content-section">
+            <div class="container hidden">
+                <h2><i class="fas fa-map-marker-alt">  </i>   Lokasi & Hubungi Kami</h2>
+                <br><br><br>
+                <div class="location-contact-flex">
+
+                    <!-- Google Maps -->
+                    <div class="map-container">
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3952.8317603063995!2d109.12725967414717!3d-7.81339147713352!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e655d7ffef8baf1%3A0x6cf5b6fa046cfb8!2sJl.%20Ahmad%20Dahlan%20No.9%2C%20Kota%20Tegal!5e0!3m2!1sid!2sid!4v1720588800000"
+                            width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+
+                    <!-- Info Kontak -->
+                    <div class="contact-container">
+                        <p><strong>Alamat:</strong> Jl. Ahmad Dahlan No.9, Kota Tegal</p>
+                        <p><strong>Email:</strong> contact@cosmiccoffee.id</p>
+                        <p><strong>Telepon:</strong> +62 812-3456-7890</p>
+                        <p><strong>Jam Operasional:</strong> Setiap Hari, 08.00 - 22.00</p>
+                    </div>
+                </div>
+            </div>
+            <br><br><br><br><br><br><br><br>
+        </section>
+        <br><br><br><br><br><br><br><br>
+        <div class="astronaut-container">
+            <img src="https://www.gambaranimasi.org/data/media/604/animasi-bergerak-pesawat-luar-angkasa-0058.gif" alt="Astronaut" class="astronaut">
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        {% include 'assets/footer.html' %}
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        const track = document.getElementById('carouselTrack');
+        track.addEventListener('mouseover', () => track.style.animationPlayState = 'paused');
+        track.addEventListener('mouseout', () => track.style.animationPlayState = 'running');
+    </script>
+    <script>
+    let carousel = document.getElementById("carouselTrack");
+
+    function pauseCarousel() {
+        carousel.style.animationPlayState = 'paused';
+    }
+
+    function resumeCarousel() {
+        carousel.style.animationPlayState = 'running';
+    }
+    </script>
+
 </body>
 </html>

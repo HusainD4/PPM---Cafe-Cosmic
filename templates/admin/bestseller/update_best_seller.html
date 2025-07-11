@@ -1,0 +1,25 @@
+{% extends 'admin/base.html' %}
+{% block title %}Update Best Seller{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Update Produk Best Seller</h3>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="produk_id" class="form-label">Pilih Produk</label>
+            <select class="form-select" id="produk_id" name="produk_id" required>
+                <option value="" disabled selected>-- Pilih Produk --</option>
+                {% for produk in produk_list %}
+                <option value="{{ produk.id }}"
+                    {% if produk.nama == best_seller.nama %}selected{% endif %}>
+                    {{ produk.nama }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{{ url_for('admin_best_seller') }}" class="btn btn-secondary">Batal</a>
+    </form>
+</div>
+    <br><br><br>  
+{% endblock %}

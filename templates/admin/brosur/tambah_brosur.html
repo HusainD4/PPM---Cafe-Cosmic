@@ -1,0 +1,93 @@
+{% extends 'admin/base.html' %}
+{% block title %}Tambah Brosur{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Tambah Gambar Brosur</h2>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Form Input -->
+    <form method="POST" novalidate>
+        <div class="form-group mb-3">
+            <label for="gambar">Link Gambar (Google Drive):</label>
+            <input type="url" class="form-control" id="gambar" name="gambar"
+                   value="{{ brosur.gambar_link if brosur else '' }}"
+                   placeholder="Tempelkan link Google Drive di sini..." required>
+            <small class="form-text text-muted">
+                Pastikan link Google Drive publik dan berupa file gambar.
+            </small>
+        </div>
+
+        <div class="form-group">
+            {% if brosur %}
+                <button type="submit" class="btn btn-warning">Update</button>
+            {% else %}
+                <button type="submit" class="btn btn-primary">Tambah</button>
+            {% endif %}
+            <a href="{{ url_for('admin_brosur') }}" class="btn btn-secondary">Kembali</a>
+        </div>
+    </form>
+</div>
+
+<!-- Overlay Loading -->
+<div id="loadingOverlay" class="loading-overlay">
+    <img src="{{ url_for('static', filename='images/logo_bg_biru.png') }}" alt="Loading..." class="loading-logo">
+    <p>Sedang memproses brosur...</p>
+</div>
+
+<!-- Style -->
+<style>
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(255, 255, 255, 0.85);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+.loading-overlay.active {
+    display: flex;
+}
+.loading-logo {
+    width: 100px;
+    animation: float 2s ease-in-out infinite;
+}
+@keyframes float {
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+}
+</style>
+
+<!-- Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form');
+    const overlay = document.getElementById('loadingOverlay');
+
+    form.addEventListener('submit', function (e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            form.reportValidity();
+        } else {
+            overlay.classList.add('active');
+        }
+    });
+});
+</script>
+    <br><br><br>  
+{% endblock %}

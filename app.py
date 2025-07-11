@@ -1,532 +1,429 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from werkzeug.security import generate_password_hash, check_password_hash
+from db.connection import get_db_connection
 from functools import wraps
-from datetime import datetime, timedelta
+import re
+from werkzeug.utils import secure_filename
+import os
 
-
-# Import koneksi & cursor
-from db.connection import db, cursor
+import requests
 
 app = Flask(__name__)
-app.secret_key = 'your_super_secret_key'
+app.secret_key = 'your_secret_key'
 
-
-# ----- Dekorator untuk proteksi route admin -----
+# ==================== MIDDLEWARE: LOGIN ADMIN ====================
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('admin_logged_in'):
-            flash('Silakan login terlebih dahulu.', 'warning')
+        if not session.get('logged_in'):
+            flash('Silakan login terlebih dahulu.', 'error')
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated_function
 
+# ==================== USER VIEWS ====================
+@app.route('/')
+def index():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
-# ----- Admin Authentication Routes -----
+    cursor.execute('SELECT * FROM produk')
+    produk = cursor.fetchall()
 
+    cursor.execute('SELECT * FROM best_seller')
+    best_seller = cursor.fetchall()
+    
+    cursor.execute('SELECT * FROM menu_image')
+    brosur = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('view/user/index.html',brosur=brosur, produk=produk, best_seller=best_seller)
+
+
+
+@app.route('/menu')
+def menu():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT id, nama, harga, deskripsi, gambar FROM produk")
+    produk_list = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('view/user/menu.html', produk_list=produk_list)
+
+@app.route('/about')
+def about():
+    return render_template('view/user/about.html')
+
+# ==================== ADMIN LOGIN ====================
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
-    """Admin login page (GET) and login processing (POST)"""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
-        cursor.execute("SELECT * FROM users WHERE username=%s", (username,))
-        user = cursor.fetchone()
-
-        if user and check_password_hash(user['password'], password):
-            session['admin_logged_in'] = True
-            session['admin_username'] = username
-            session['admin_id'] = user['id_users']
-            flash('Login berhasil', 'success')
+        # Dummy login
+        if username == 'admin' and password == 'admin123':
+            session['logged_in'] = True
+            flash('Berhasil login sebagai admin!', 'success')
             return redirect(url_for('admin_dashboard'))
         else:
-            flash('Username atau password salah', 'danger')
+            flash('Username atau password salah.', 'error')
             return redirect(url_for('admin_login'))
 
     return render_template('admin/login.html')
 
-
 @app.route('/admin/logout')
-@login_required
 def admin_logout():
-    """Logout admin and clear session"""
-    session.clear()
-    flash('Anda berhasil logout', 'success')
+    session.pop('logged_in', None)
+    flash('Berhasil logout.', 'success')
     return redirect(url_for('admin_login'))
 
+# ==================== ADMIN DASHBOARD ====================
+# gambar_input = request.form['gambar']
 
-# ----- Admin Dashboard -----
 
-@app.route('/admin/dashboard')
+# ==================== KONVERSI LINK GOOGLE DRIVE ====================
+def convert_drive_link(link, mode='thumbnail'):
+    """
+    Mengonversi berbagai format link Google Drive ke format embed/thumbnail.
+    mode: 'thumbnail' atau 'view'
+    """
+    if not link:
+        return ""
+    match = re.search(r'/d/([a-zA-Z0-9_-]+)', link) or re.search(r'[?&]id=([a-zA-Z0-9_-]+)', link)
+    if match:
+        file_id = match.group(1)
+        if mode == 'view':
+            return f"https://drive.google.com/uc?export=view&id={file_id}"
+        return f"https://drive.google.com/thumbnail?id={file_id}"
+    return link
+
+# ==================== DASHBOARD ADMIN ====================
+@app.route('/admin')
 @login_required
 def admin_dashboard():
-    """Admin dashboard showing summary data and recent products/best sellers"""
-    jumlah_users = get_total_users()
-    jumlah_produk = get_total_produk()
-    jumlah_best_seller = get_total_best_seller()
-    jumlah_promo = get_total_promo()
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM produk")
+    total_produk = cursor.fetchone()[0]
 
-    produk_terbaru = get_latest_produk(limit=5)
-    best_seller_terbaru = get_latest_best_seller(limit=5)
+    cursor.execute("SELECT COUNT(*) FROM best_seller")
+    total_best_seller = cursor.fetchone()[0]
 
-    return render_template('admin/dashboard.html',
-                           jumlah_users=jumlah_users,
-                           jumlah_produk=jumlah_produk,
-                           jumlah_best_seller=jumlah_best_seller,
-                           jumlah_promo=jumlah_promo,
-                           produk_terbaru=produk_terbaru,
-                           best_seller_terbaru=best_seller_terbaru)
+    cursor.close()
+    conn.close()
 
+    return render_template(
+        'admin/admin_dashboard.html',
+        total_produk=total_produk,
+        total_best_seller=total_best_seller
+    )
 
-# # ----- Admin Update Produk Interaktif Status -----
-
-# @app.route('/admin/update_interaktif', methods=['POST'])
-# @login_required
-# def admin_update_interaktif():
-#     """Update the 'interaktif' status (biasa, promo, best seller) for products"""
-#     for key, value in request.form.items():
-#         if key.startswith('interaktif_'):
-#             id_produk = key.split('_')[1]
-#             interaktif = value
-#             cursor.execute("UPDATE produk SET interaktif = %s WHERE id_produk = %s", (interaktif, id_produk))
-#     db.commit()
-#     flash('Status interaktif produk berhasil diperbarui.', 'success')
-#     return redirect(url_for('admin_best_seller'))
-
-
-# ----- Helper Functions to Fetch Summary Data -----
-
-def get_total_users():
-    cursor.execute("SELECT COUNT(*) AS total FROM users")
-    result = cursor.fetchone()
-    return result['total'] if result else 0
-
-
-def get_total_produk():
-    cursor.execute("SELECT COUNT(*) AS total FROM produk")
-    result = cursor.fetchone()
-    return result['total'] if result else 0
-
-
-def get_total_best_seller():
-    cursor.execute("SELECT COUNT(*) AS total FROM best_seller")
-    result = cursor.fetchone()
-    return result['total'] if result else 0
-
-
-def get_total_promo():
-    # Jika kamu punya tabel promo, sesuaikan nama tabelnya
-    cursor.execute("SELECT COUNT(*) AS total FROM promo")
-    result = cursor.fetchone()
-    return result['total'] if result else 0
-
-
-def get_latest_produk(limit=5):
-    cursor.execute("""
-        SELECT p.*, u.username AS added_by FROM produk p
-        LEFT JOIN users u ON p.id_user = u.id_users
-        ORDER BY p.created_at DESC
-        LIMIT %s
-    """, (limit,))
-    return cursor.fetchall()
-
-
-def get_latest_best_seller(limit=5):
-    cursor.execute("""
-        SELECT bs.*, p.nama_produk, u.username FROM best_seller bs
-        JOIN produk p ON bs.id_produk = p.id_produk
-        JOIN users u ON bs.id_users = u.id_users
-        ORDER BY bs.created_at DESC
-        LIMIT %s
-    """, (limit,))
-    return cursor.fetchall()
-
-
-# ----- CRUD Users -----
-
-@app.route('/admin/users')
-@login_required
-def admin_users():
-    """List all users"""
-    cursor.execute("SELECT * FROM users")
-    users = cursor.fetchall()
-    return render_template('admin/users.html', users=users)
-
-
-@app.route('/admin/users/add', methods=['GET', 'POST'])
-@login_required
-def admin_add_user():
-    """Add new user form and submission"""
-    if request.method == 'POST':
-        username = request.form['username']
-        nama_lengkap = request.form['nama_lengkap']
-        password = request.form['password']
-        konfirmasi_password = request.form['konfirmasi_password']
-
-        if password != konfirmasi_password:
-            flash('Password dan konfirmasi password tidak sama', 'danger')
-            return redirect(url_for('admin_add_user'))
-
-        hashed_pw = generate_password_hash(password)
-        cursor.execute("""
-            INSERT INTO users (username, nama_lengkap, password)
-            VALUES (%s, %s, %s)
-        """, (username, nama_lengkap, hashed_pw))
-        db.commit()
-        flash('User berhasil ditambahkan', 'success')
-        return redirect(url_for('admin_users'))
-
-    return render_template('admin/add_user.html')
-
-
-@app.route('/admin/users/edit/<int:id_users>', methods=['GET', 'POST'])
-@login_required
-def admin_edit_user(id_users):
-    """Edit user details form and submission"""
-    cursor.execute("SELECT * FROM users WHERE id_users=%s", (id_users,))
-    user = cursor.fetchone()
-
-    if request.method == 'POST':
-        username = request.form['username']
-        nama_lengkap = request.form['nama_lengkap']
-        password = request.form.get('password')
-        konfirmasi_password = request.form.get('konfirmasi_password')
-
-        if password:
-            if password != konfirmasi_password:
-                flash('Password dan konfirmasi password tidak sama', 'danger')
-                return redirect(url_for('admin_edit_user', id_users=id_users))
-            hashed_pw = generate_password_hash(password)
-            cursor.execute("""
-                UPDATE users SET username=%s, nama_lengkap=%s, password=%s
-                WHERE id_users=%s
-            """, (username, nama_lengkap, hashed_pw, id_users))
-        else:
-            cursor.execute("""
-                UPDATE users SET username=%s, nama_lengkap=%s
-                WHERE id_users=%s
-            """, (username, nama_lengkap, id_users))
-
-        db.commit()
-        flash('User berhasil diupdate', 'success')
-        return redirect(url_for('admin_users'))
-
-    return render_template('admin/edit_user.html', user=user)
-
-
-@app.route('/admin/users/delete/<int:id_users>', methods=['POST'])
-@login_required
-def admin_delete_user(id_users):
-    """Delete user by id"""
-    cursor.execute("DELETE FROM users WHERE id_users=%s", (id_users,))
-    db.commit()
-    flash('User berhasil dihapus', 'success')
-    return redirect(url_for('admin_users'))
-
-
-# ----- CRUD Produk -----
-
+# ==================== LIST PRODUK ====================
 @app.route('/admin/produk')
 @login_required
 def admin_produk():
-    """List all products"""
-    cursor.execute("""
-        SELECT p.*, u.username AS added_by FROM produk p
-        LEFT JOIN users u ON p.id_user = u.id_users
-        ORDER BY p.created_at DESC
-    """)
-    produk = cursor.fetchall()
-    return render_template('admin/produk.html', produk=produk)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM produk")
+    daftar_produk = cursor.fetchall()
 
+    for produk in daftar_produk:
+        print(f"Gambar produk '{produk['nama']}': {produk['gambar']}")
 
-@app.route('/admin/produk/add', methods=['GET', 'POST'])
+    cursor.close()
+    conn.close()
+    return render_template('admin/produk/admin_produk.html', daftar_produk=daftar_produk)
+
+# ==================== TAMBAH PRODUK ====================
+@app.route('/admin/produk/tambah', methods=['GET', 'POST'])
 @login_required
-def admin_add_produk():
-    """Add new product form and submission"""
-    cursor.execute("SELECT id_users, username FROM users")
-    users = cursor.fetchall()
-
+def tambah_produk():
     if request.method == 'POST':
-        nama_produk = request.form['nama_produk']
-        deskripsi_produk = request.form['deskripsi_produk']
-        harga_produk = request.form['harga_produk']
-        interaktif = request.form['interaktif']
-        gambar = request.form['gambar']  # Hanya nama file, bisa dikembangkan upload file
-        id_user = request.form.get('id_user') or None
+        nama = request.form['nama']
+        harga = request.form['harga']
+        deskripsi = request.form['deskripsi']
+        gambar_input = request.form['gambar']
 
-        cursor.execute("""
-            INSERT INTO produk (nama_produk, deskripsi_produk, harga_produk, interaktif, gambar, id_user)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (nama_produk, deskripsi_produk, harga_produk, interaktif, gambar, id_user))
-        db.commit()
-        flash('Produk berhasil ditambahkan', 'success')
+        gambar = convert_drive_link(gambar_input, mode='thumbnail')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO produk (nama, harga, deskripsi, gambar) VALUES (%s, %s, %s, %s)",
+            (nama, harga, deskripsi, gambar)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Produk berhasil ditambahkan.', 'success')
         return redirect(url_for('admin_produk'))
 
-    return render_template('admin/add_produk.html', users=users)
+    return render_template('admin/produk/tambah_produk.html')
 
-
-@app.route('/admin/produk/edit/<int:id_produk>', methods=['GET', 'POST'])
+# ==================== UPDATE PRODUK ====================
+@app.route('/admin/produk/update/<int:id>', methods=['GET', 'POST'])
 @login_required
-def admin_edit_produk(id_produk):
-    """Edit product details form and submission"""
-    cursor.execute("SELECT * FROM produk WHERE id_produk=%s", (id_produk,))
+def update_produk(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        nama = request.form['nama']
+        harga = request.form['harga']
+        deskripsi = request.form['deskripsi']
+        gambar_input = request.form['gambar']
+
+        # Ganti 'view' dengan 'thumbnail' agar gambar tampil sebagai thumbnail
+        gambar = convert_drive_link(gambar_input, mode='thumbnail')
+
+        cursor.execute(
+            "UPDATE produk SET nama = %s, harga = %s, deskripsi = %s, gambar = %s WHERE id = %s",
+            (nama, harga, deskripsi, gambar, id)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Produk berhasil diupdate.', 'success')
+        return redirect(url_for('admin_produk'))
+
+    cursor.execute("SELECT * FROM produk WHERE id = %s", (id,))
     produk = cursor.fetchone()
-    cursor.execute("SELECT id_users, username FROM users")
-    users = cursor.fetchall()
 
-    if request.method == 'POST':
-        nama_produk = request.form['nama_produk']
-        deskripsi_produk = request.form['deskripsi_produk']
-        harga_produk = request.form['harga_produk']
-        interaktif = request.form['interaktif']
-        gambar = request.form['gambar']
-        id_user = request.form.get('id_user') or None
+    cursor.close()
+    conn.close()
 
-        cursor.execute("""
-            UPDATE produk SET nama_produk=%s, deskripsi_produk=%s, harga_produk=%s, interaktif=%s, gambar=%s, id_user=%s
-            WHERE id_produk=%s
-        """, (nama_produk, deskripsi_produk, harga_produk, interaktif, gambar, id_user, id_produk))
-        db.commit()
-        flash('Produk berhasil diupdate', 'success')
+    if not produk:
+        flash('Produk tidak ditemukan.', 'danger')
         return redirect(url_for('admin_produk'))
 
-    return render_template('admin/edit_produk.html', produk=produk, users=users)
+    return render_template('admin/produk/update_produk.html', produk=produk)
 
 
-@app.route('/admin/produk/delete/<int:id_produk>', methods=['POST'])
+
+@app.route('/admin/produk/hapus/<int:id>')
 @login_required
-def admin_delete_produk(id_produk):
-    """Delete product by id"""
-    cursor.execute("DELETE FROM produk WHERE id_produk=%s", (id_produk,))
-    db.commit()
-    flash('Produk berhasil dihapus', 'success')
+def hapus_produk(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM produk WHERE id = %s", (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Produk berhasil dihapus.', 'success')
     return redirect(url_for('admin_produk'))
 
+# ==================== UPDATE BROSUR ====================
 
-# ----- CRUD Tentang Kami -----
-
-@app.route('/admin/tentang_kami')
+@app.route('/admin/brosur')
 @login_required
-def admin_tentang_kami():
-    """List all 'Tentang Kami' entries"""
-    cursor.execute("SELECT * FROM tentang_kami")
-    tentang = cursor.fetchall()
-    return render_template('admin/tentang_kami.html', tentang=tentang)
+def admin_brosur():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM menu_image")
+    daftar_brosur = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('admin/brosur/admin_brosur.html', daftar_brosur=daftar_brosur)
 
-
-@app.route('/admin/tentang_kami/add', methods=['GET', 'POST'])
+@app.route('/admin/brosur/tambah', methods=['GET', 'POST'])
 @login_required
-def admin_add_tentang_kami():
-    """Add 'Tentang Kami' entry"""
-    if request.method == 'POST':
-        judul = request.form['judul']
-        isi = request.form['isi']
+def tambah_brosur():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
-        cursor.execute("""
-            INSERT INTO tentang_kami (judul, isi)
-            VALUES (%s, %s)
-        """, (judul, isi))
-        db.commit()
-        flash('Data tentang kami berhasil ditambahkan', 'success')
-        return redirect(url_for('admin_tentang_kami'))
-
-    return render_template('admin/add_tentang_kami.html')
-
-
-@app.route('/admin/tentang_kami/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
-def admin_edit_tentang_kami(id):
-    """Edit 'Tentang Kami' entry"""
-    cursor.execute("SELECT * FROM tentang_kami WHERE id=%s", (id,))
-    tentang = cursor.fetchone()
+    # Ambil data brosur (maksimum 1 yang disimpan)
+    cursor.execute("SELECT * FROM menu_image LIMIT 1")
+    brosur = cursor.fetchone()
 
     if request.method == 'POST':
-        judul = request.form['judul']
-        isi = request.form['isi']
+        link_gdrive = request.form['gambar']
 
-        cursor.execute("""
-            UPDATE tentang_kami SET judul=%s, isi=%s WHERE id=%s
-        """, (judul, isi, id))
-        db.commit()
-        flash('Data tentang kami berhasil diupdate', 'success')
-        return redirect(url_for('admin_tentang_kami'))
+        # Ekstrak file ID dari link Google Drive
+        try:
+            file_id = link_gdrive.split('/d/')[1].split('/')[0]
+        except IndexError:
+            flash("Link Google Drive tidak valid!", "danger")
+            return redirect(request.url)
 
-    return render_template('admin/edit_tentang_kami.html', tentang=tentang)
+        download_url = f'https://drive.google.com/uc?export=download&id={file_id}'
+        filename = secure_filename(f'brosur_{file_id}.jpg')
+        save_path = os.path.join('static/images', filename)
+        gambar_baru = f'images/{filename}'
+
+        try:
+            # Hapus gambar lama jika ada dan file-nya masih ada di folder
+            if brosur and brosur.get('gambar'):
+                gambar_lama_path = os.path.join('static', brosur['gambar'])
+                if os.path.exists(gambar_lama_path):
+                    os.remove(gambar_lama_path)
+
+            # Download gambar baru
+            response = requests.get(download_url, stream=True)
+            if response.status_code == 200:
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                with open(save_path, 'wb') as f:
+                    for chunk in response.iter_content(1024):
+                        f.write(chunk)
+            else:
+                flash("Gagal mengunduh gambar dari Google Drive.", "danger")
+                return redirect(request.url)
+
+            # Simpan atau perbarui di database
+            if brosur:
+                cursor.execute(
+                    "UPDATE menu_image SET gambar = %s WHERE id = %s",
+                    (gambar_baru, brosur['id'])
+                )
+            else:
+                cursor.execute(
+                    "INSERT INTO menu_image (gambar) VALUES (%s)",
+                    (gambar_baru,)
+                )
+
+            conn.commit()
+            flash("Brosur berhasil diperbarui!", "success")
+            return redirect(url_for('admin_brosur'))
+
+        except Exception as e:
+            flash(f"Gagal memproses gambar: {str(e)}", "danger")
+            return redirect(request.url)
+
+    cursor.close()
+    conn.close()
+    return render_template('admin/brosur/tambah_brosur.html', brosur=brosur)
 
 
-@app.route('/admin/tentang_kami/delete/<int:id>', methods=['POST'])
+@app.route('/admin/brosur/hapus/<int:id>')
 @login_required
-def admin_delete_tentang_kami(id):
-    """Delete 'Tentang Kami' entry"""
-    cursor.execute("DELETE FROM tentang_kami WHERE id=%s", (id,))
-    db.commit()
-    flash('Data tentang kami berhasil dihapus', 'success')
-    return redirect(url_for('admin_tentang_kami'))
+def hapus_brosur(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM menu_image WHERE id = %s", (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Brosur berhasil dihapus.', 'success')
+    return redirect(url_for('admin_brosur'))
 
-# ----- CRUD Best Seller -----
-
+# ==================== ADMIN - BEST SELLER ====================
 @app.route('/admin/best_seller')
 @login_required
 def admin_best_seller():
-    cursor.execute("""
-        SELECT bs.*, p.nama_produk, p.harga_produk, u.username 
-        FROM best_seller bs
-        JOIN produk p ON bs.id_produk = p.id_produk
-        JOIN users u ON bs.id_users = u.id_users
-        ORDER BY bs.created_at DESC
-    """)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM best_seller")
     best_seller = cursor.fetchall()
 
-    cursor.execute("SELECT id_produk, nama_produk, harga_produk, interaktif FROM produk")
+    cursor.close()
+    conn.close()
+    return render_template('admin/bestseller/admin_best_seller.html', best_seller=best_seller)
+
+@app.route('/admin/best_seller/tambah', methods=['GET', 'POST'])
+@login_required
+def tambah_best_seller():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Ambil daftar produk dari database
+    cursor.execute("SELECT id, nama, harga, deskripsi, gambar FROM produk")
     produk_list = cursor.fetchall()
 
-    cursor.execute("SELECT id_users, username FROM users")
-    users_list = cursor.fetchall()
+    if request.method == 'POST':
+        produk_id = request.form['produk_id']
 
-    return render_template('admin/best_seller.html',
+        # Ambil data produk yang dipilih
+        cursor.execute("SELECT * FROM produk WHERE id = %s", (produk_id,))
+        produk = cursor.fetchone()
+
+        if not produk:
+            flash('Produk tidak ditemukan.', 'danger')
+            return redirect(url_for('tambah_best_seller'))
+
+        # Konversi link gambar
+        gambar = convert_drive_link(produk['gambar'], mode='thumbnail')
+
+        # Simpan ke tabel best_seller
+        cursor.execute(
+            "INSERT INTO best_seller (nama, harga, deskripsi, gambar) VALUES (%s, %s, %s, %s)",
+            (produk['nama'], produk['harga'], produk['deskripsi'], gambar)
+        )
+        conn.commit()
+        flash('Best Seller berhasil ditambahkan.', 'success')
+        return redirect(url_for('admin_best_seller'))
+
+    cursor.close()
+    conn.close()
+    return render_template('admin/bestseller/tambah_best_seller.html', produk_list=produk_list)
+
+
+@app.route('/admin/best_seller/update/<int:id>', methods=['GET', 'POST'])
+@login_required
+def update_best_seller(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Ambil semua produk
+    cursor.execute("SELECT id, nama FROM produk")
+    produk_list = cursor.fetchall()
+
+    # Ambil data best seller saat ini
+    cursor.execute("SELECT * FROM best_seller WHERE id = %s", (id,))
+    best_seller = cursor.fetchone()
+
+    if not best_seller:
+        flash('Data Best Seller tidak ditemukan.', 'danger')
+        return redirect(url_for('admin_best_seller'))
+
+    if request.method == 'POST':
+        produk_id = request.form['produk_id']
+
+        # Ambil detail produk dari pilihan user
+        cursor.execute("SELECT * FROM produk WHERE id = %s", (produk_id,))
+        produk = cursor.fetchone()
+
+        if not produk:
+            flash('Produk tidak ditemukan.', 'danger')
+            return redirect(url_for('update_best_seller', id=id))
+
+        gambar = convert_drive_link(produk['gambar'], mode='thumbnail')
+
+        # Update data best seller
+        cursor.execute(
+            "UPDATE best_seller SET nama = %s, harga = %s, deskripsi = %s, gambar = %s WHERE id = %s",
+            (produk['nama'], produk['harga'], produk['deskripsi'], gambar, id)
+        )
+        conn.commit()
+        flash('Best Seller berhasil diupdate.', 'success')
+        return redirect(url_for('admin_best_seller'))
+
+    cursor.close()
+    conn.close()
+    return render_template('admin/bestseller/update_best_seller.html',
                            best_seller=best_seller,
-                           produk=produk_list,
-                           users_list=users_list)
+                           produk_list=produk_list)
 
 
-@app.route('/admin/best_seller/add', methods=['POST'])
+@app.route('/admin/best_seller/hapus/<int:id>')
 @login_required
-def admin_add_best_seller():
-    id_produk = request.form['id_produk']
-    id_users = current_user.id_users  # Pakai user login sekarang
+def hapus_best_seller(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM best_seller WHERE id = %s", (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-    cursor.execute("""
-        INSERT INTO best_seller (id_produk, id_users, created_at, updated_at)
-        VALUES (%s, %s, NOW(), NOW())
-    """, (id_produk, id_users))
-    db.commit()
-    flash('Best seller berhasil ditambahkan', 'success')
+    flash('Best Seller berhasil dihapus.', 'success')
     return redirect(url_for('admin_best_seller'))
 
-
-@app.route('/admin/update_interaktif', methods=['POST'])
-@login_required
-def admin_update_interaktif():
-    cursor.execute("SELECT id_produk, harga_produk FROM produk")
-    produk_list = cursor.fetchall()
-
-    for p in produk_list:
-        id_produk = p['id_produk']
-
-        # Ambil status dari form
-        status = request.form.get(f'interaktif_{id_produk}')
-
-        # Hapus dulu best_seller dan promo terkait produk ini
-        cursor.execute("DELETE FROM best_seller WHERE id_produk = %s", (id_produk,))
-        cursor.execute("DELETE FROM promo WHERE id_produk = %s", (id_produk,))
-
-        if status == 'best seller':
-            # Insert ke best_seller dengan user sekarang
-            cursor.execute("""
-                INSERT INTO best_seller (id_produk, id_users, nama_produk, harga_produk, deskripsi_produk, tanggal_berlaku_dari, tanggal_berlaku_sampai, created_at, updated_at, action)
-                SELECT id_produk, %s, nama_produk, harga_produk, deskripsi_produk, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW(), 'added'
-                FROM produk WHERE id_produk = %s
-            """, (current_user.id_users, id_produk))
-
-        elif status == 'promo':
-            harga_promo = request.form.get(f'harga_promo_{id_produk}')
-            tanggal_mulai = request.form.get(f'tanggal_mulai_{id_produk}')
-            tanggal_berakhir = request.form.get(f'tanggal_berakhir_{id_produk}')
-
-            # Validasi input promo sederhana
-            if not harga_promo or not tanggal_mulai or not tanggal_berakhir:
-                flash(f'Lengkapi data promo untuk produk ID {id_produk}', 'danger')
-                continue
-
-            cursor.execute("""
-                INSERT INTO promo (id_produk, nama_promo, deskripsi, tanggal_mulai, tanggal_berakhir, harga_promo, created_at, updated_at)
-                SELECT id_produk, nama_produk, deskripsi_produk, %s, %s, %s, NOW(), NOW()
-                FROM produk WHERE id_produk = %s
-            """, (tanggal_mulai, tanggal_berakhir, harga_promo, id_produk))
-
-        # Update status interaktif di produk
-        cursor.execute("UPDATE produk SET interaktif = %s WHERE id_produk = %s", (status, id_produk))
-
-    db.commit()
-    flash("Status interaktif berhasil diperbarui.", "success")
-    return redirect(url_for('admin_best_seller'))
-
-
-@app.route('/admin/best_seller/delete/<int:id>', methods=['POST'])
-@login_required
-def admin_delete_best_seller(id):
-    cursor.execute("DELETE FROM best_seller WHERE id=%s", (id,))
-    db.commit()
-    flash('Best seller berhasil dihapus', 'success')
-    return redirect(url_for('admin_best_seller'))
-
-
-# ----- CRUD Promo -----
-
-@app.route('/admin/promo')
-@login_required
-def admin_promo():
-    cursor.execute("SELECT * FROM promo ORDER BY created_at DESC")
-    promo = cursor.fetchall()
-    return render_template('admin/promo.html', promo=promo)
-
-
-@app.route('/admin/promo/add', methods=['GET', 'POST'])
-@login_required
-def admin_add_promo():
-    if request.method == 'POST':
-        nama_promo = request.form['nama_promo']
-        deskripsi_promo = request.form['deskripsi_promo']
-        tanggal_mulai = request.form['tanggal_mulai']
-        tanggal_selesai = request.form['tanggal_selesai']
-
-        cursor.execute("""
-            INSERT INTO promo (nama_promo, deskripsi_promo, tanggal_mulai, tanggal_selesai, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, NOW(), NOW())
-        """, (nama_promo, deskripsi_promo, tanggal_mulai, tanggal_selesai))
-        db.commit()
-        flash('Promo berhasil ditambahkan', 'success')
-        return redirect(url_for('admin_promo'))
-
-    return render_template('admin/add_promo.html')
-
-
-@app.route('/admin/promo/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
-def admin_edit_promo(id):
-    cursor.execute("SELECT * FROM promo WHERE id=%s", (id,))
-    promo = cursor.fetchone()
-
-    if request.method == 'POST':
-        nama_promo = request.form['nama_promo']
-        deskripsi_promo = request.form['deskripsi_promo']
-        tanggal_mulai = request.form['tanggal_mulai']
-        tanggal_selesai = request.form['tanggal_selesai']
-
-        cursor.execute("""
-            UPDATE promo SET nama_promo=%s, deskripsi_promo=%s, tanggal_mulai=%s, tanggal_selesai=%s, updated_at=NOW()
-            WHERE id=%s
-        """, (nama_promo, deskripsi_promo, tanggal_mulai, tanggal_selesai, id))
-        db.commit()
-        flash('Promo berhasil diupdate', 'success')
-        return redirect(url_for('admin_promo'))
-
-    return render_template('admin/edit_promo.html', promo=promo)
-
-
-@app.route('/admin/promo/delete/<int:id>', methods=['POST'])
-@login_required
-def admin_delete_promo(id):
-    cursor.execute("DELETE FROM promo WHERE id=%s", (id,))
-    db.commit()
-    flash('Promo berhasil dihapus', 'success')
-    return redirect(url_for('admin_promo'))
-
-# ----- Jalankan aplikasi -----
+# ==================== RUN APP ====================
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,29 @@
+{% extends 'admin/base.html' %}
+{% block title %}Update Produk{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Update Produk</h3>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="nama" class="form-label">Nama Produk</label>
+            <input type="text" class="form-control" id="nama" name="nama" value="{{ produk.nama }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="harga" class="form-label">Harga Produk</label>
+            <input type="number" class="form-control" id="harga" name="harga" value="{{ produk.harga }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="deskripsi" class="form-label">Deskripsi</label>
+            <textarea class="form-control" id="deskripsi" name="deskripsi" rows="4" required>{{ produk.deskripsi }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="gambar" class="form-label">Link Gambar (Google Drive/Public URL)</label>
+            <input type="url" class="form-control" id="gambar" name="gambar" value="{{ produk.gambar }}" required>
+        </div>
+        <button type="submit" class="btn btn-success">Update Produk</button>
+        <a href="{{ url_for('admin_produk') }}" class="btn btn-secondary">Batal</a>
+    </form>
+</div>
+    <br><br><br>  
+{% endblock %}

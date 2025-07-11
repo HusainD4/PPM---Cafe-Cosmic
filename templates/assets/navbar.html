@@ -1,17 +1,27 @@
 <nav class="navbar">
-    <a href="{{ url_for('index') }}" class="logo">COSMIC</a>
+    <a href="{{ url_for('index') }}" class="logo">
+        <i class="fas fa-user-astronaut"></i> COSMIC
+    </a>
     <ul class="nav-menu">
         <li class="nav-item">
-            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Beranda</a>
+            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+                <i class="fas fa-rocket"></i> Beranda
+            </a>
         </li>
         <li class="nav-item">
-            <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}active{% endif %}">Tentang Kami</a>
+            <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}active{% endif %}">
+                <i class="fas fa-satellite"></i> Tentang Kami
+            </a>
         </li>
         <li class="nav-item">
-            <a href="{{ url_for('menu') }}" class="nav-link {% if request.endpoint == 'menu' %}active{% endif %}">Menu</a>
+            <a href="{{ url_for('menu') }}" class="nav-link {% if request.endpoint == 'menu' %}active{% endif %}">
+                <i class="fas fa-meteor"></i> Menu
+            </a>
         </li>
         <li class="nav-item">
-            <a href="{{ url_for('admin_login') }}" class="nav-link {% if request.endpoint == 'admin_login' %}active{% endif %}">Admin</a>
+            <a href="{{ url_for('admin_login') }}" class="nav-link {% if request.endpoint == 'admin_login' %}active{% endif %}">
+                <i class="fas fa-moon"></i> Admin
+            </a>
         </li>
     </ul>
     <div class="hamburger">

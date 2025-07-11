@@ -1,0 +1,91 @@
+{% extends 'admin/base.html' %}
+{% block title %}Tambah Produk{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Tambah Produk</h3>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="nama" class="form-label">Nama Produk</label>
+            <input type="text" class="form-control" id="nama" name="nama" required>
+        </div>
+        <div class="mb-3">
+            <label for="harga" class="form-label">Harga Produk</label>
+            <input type="number" class="form-control" id="harga" name="harga" required>
+        </div>
+        <div class="mb-3">
+            <label for="deskripsi" class="form-label">Deskripsi</label>
+            <textarea class="form-control" id="deskripsi" name="deskripsi" rows="4" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="gambar" class="form-label">Link Gambar (Google Drive/Public URL)</label>
+            <input type="url" class="form-control" id="gambar" name="gambar"
+                placeholder="https://drive.google.com/..." 
+                onblur="convertDriveLink(this)" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Simpan Produk</button>
+        <a href="{{ url_for('admin_produk') }}" class="btn btn-secondary">Batal</a>
+    </form>
+</div>
+<!-- Overlay Loading -->
+<div id="loadingOverlay" class="loading-overlay">
+    <img src="{{ url_for('static', filename='images/logo_bg_biru.png') }}" alt="Loading..." class="loading-logo">
+    <p>Sedang memproses brosur...</p>
+</div>
+
+<!-- Style -->
+<style>
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(255, 255, 255, 0.85);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+.loading-overlay.active {
+    display: flex;
+}
+.loading-logo {
+    width: 100px;
+    animation: float 2s ease-in-out infinite;
+}
+@keyframes float {
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+}
+</style>
+
+<!-- Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form');
+    const overlay = document.getElementById('loadingOverlay');
+
+    form.addEventListener('submit', function (e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            form.reportValidity();
+        } else {
+            overlay.classList.add('active');
+        }
+    });
+});
+</script>
+<script>
+    function convertDriveLink(input) {
+        const original = input.value;
+        const match = original.match(/\/d\/([a-zA-Z0-9_-]+)\//);
+        if (match) {
+            const fileId = match[1];
+            const directLink = `https://drive.google.com/uc?export=view&id=${fileId}`;
+            input.value = directLink;
+        }
+    }
+</script>
+    <br><br><br>  
+{% endblock %}

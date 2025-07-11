@@ -1,0 +1,108 @@
+{% extends 'admin/base.html' %}
+{% block title %}Manajemen Brosur{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Daftar Brosur Menu</h2>
+
+    {% if daftar_brosur|length == 0 %}
+    <a href="{{ url_for('tambah_brosur') }}" class="btn btn-success mb-3">
+        <i class="fas fa-plus"></i> Tambah Brosur
+    </a>
+    {% else %}
+    <a href="{{ url_for('tambah_brosur') }}" class="btn btn-warning mb-3">
+        <i class="fas fa-edit"></i> Update Brosur
+    </a>
+    {% endif %}
+
+    <div style="overflow-x: auto;">
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>No</th>
+                    <th>Gambar Brosur</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in daftar_brosur %}
+                <tr>
+                    <td style="text-align: center; vertical-align: middle;">{{ loop.index }}</td>
+                    <td style="text-align: center;">
+                        {% if item['gambar'] %}
+                            <img src="{{ url_for('static', filename=item['gambar']) }}"
+                                 alt="Brosur"
+                                 width="120"
+                                 style="pointer-events: none; user-select: none;"
+                                 oncontextmenu="return false;"
+                                 ondragstart="return false;"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/120?text=No+Image';">
+                        {% else %}
+                            <img src="https://via.placeholder.com/120?text=No+Image"
+                                 alt="No Image"
+                                 width="120"
+                                 style="pointer-events: none; user-select: none;"
+                                 oncontextmenu="return false;"
+                                 ondragstart="return false;">
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; vertical-align: middle;">
+                        <button onclick="konfirmasiHapus('{{ url_for('hapus_brosur', id=item['id']) }}')"
+                                class="btn btn-danger btn-sm" style="margin: 5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center">Belum ada brosur ditambahkan.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <br><br><br>  
+</div>
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- SweetAlert2 Konfirmasi Hapus dengan Tema Astronot -->
+<script>
+function konfirmasiHapus(hapusUrl) {
+    Swal.fire({
+        title: 'Yakin ingin menghapus?',
+        text: 'Brosur ini akan dihapus dari sistem!',
+        iconHtml: '<img src="https://cdn-icons-png.flaticon.com/512/3212/3212608.png" width="60">',
+        showCancelButton: true,
+        confirmButtonText: '🚀 Ya, Hapus!',
+        cancelButtonText: 'Tidak, Batal',
+        background: '#0f2027',
+        color: '#fff',
+        iconColor: '#fff',
+        showClass: {
+            popup: 'animate__animated animate__zoomIn'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__zoomOut'
+        },
+        customClass: {
+            confirmButton: 'btn btn-danger swal-btn-margin',
+            cancelButton: 'btn btn-secondary swal-btn-margin'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = hapusUrl;
+        }
+    });
+}
+</script>
+
+<!-- CSS untuk margin tombol SweetAlert -->
+<style>
+.swal-btn-margin {
+    margin: 10px;
+}
+</style>
+{% endblock %}

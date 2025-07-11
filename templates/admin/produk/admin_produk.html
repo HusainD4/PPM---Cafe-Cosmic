@@ -1,0 +1,128 @@
+{% extends 'admin/base.html' %}
+{% block title %}Manajemen Produk{% endblock %}
+
+{% block content %}
+<style>
+.swal-btn-margin {
+    margin: 10px;
+}
+</style>
+
+<div class="container mt-5">
+    <h2 class="mb-4">Daftar Produk</h2>
+
+    <!-- Tombol Tambah Produk -->
+    <a href="{{ url_for('tambah_produk') }}" class="btn btn-success mb-3">
+        <i class="fas fa-plus"></i> Tambah Produk
+    </a>
+
+
+
+    <!-- TABEL PRODUK -->
+    <div style="overflow-x: auto;">
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>No</th>
+                    <th>Nama Produk</th>
+                    <th>Harga (Rp)</th>
+                    <th>Gambar</th>
+                    <th>Deskripsi</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produk in daftar_produk %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ produk['nama'] }}</td>
+                    <td>{{ "{:,.0f}".format(produk['harga'] | int).replace(',', '.') }}</td>
+                    <td>
+                        {% if produk['gambar'] %}
+                            <img src="{{ produk['gambar'] }}" alt="gambar" width="100"
+                                 style="pointer-events: none; user-select: none;"
+                                 oncontextmenu="return false;" ondragstart="return false;"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/100?text=No+Image';">
+                        {% else %}
+                            <img src="https://via.placeholder.com/100?text=No+Image" alt="No Image" width="100"
+                                 style="pointer-events: none; user-select: none;"
+                                 oncontextmenu="return false;" ondragstart="return false;">
+                        {% endif %}
+                    </td>
+                    <td>{{ produk['deskripsi'] }}</td>
+                    <td style="text-align: center; vertical-align: middle;">
+                        <a href="{{ url_for('update_produk', id=produk['id']) }}" 
+                           class="btn btn-warning btn-sm" 
+                           style="margin: 5px;">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="#" 
+                           class="btn btn-danger btn-sm" 
+                           style="margin: 5px;"
+                           onclick="konfirmasiHapus('{{ url_for('hapus_produk', id=produk['id']) }}')">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center">Belum ada produk.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <br><br><br>    
+</div>
+
+<!-- SweetAlert2 CDN & Animate.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- JS Konfirmasi Hapus -->
+<script>
+function konfirmasiHapus(hapusUrl) {
+    Swal.fire({
+        title: 'Yakin ingin menghapus?',
+        text: 'Produk ini akan dihapus dari galaksi toko kamu!',
+        iconHtml: '<img src="https://cdn-icons-png.flaticon.com/512/3212/3212608.png" width="60">',
+        showCancelButton: true,
+        confirmButtonText: '🚀 Ya, Hapus!',
+        cancelButtonText: 'Tidak, Batal',
+        background: '#0f2027',
+        color: '#fff',
+        iconColor: '#fff',
+        showClass: {
+            popup: 'animate__animated animate__zoomIn'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__zoomOut'
+        },
+        customClass: {
+            confirmButton: 'btn btn-danger swal-btn-margin',
+            cancelButton: 'btn btn-secondary swal-btn-margin'
+        },
+
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = hapusUrl;
+        }
+    });
+}
+</script>
+
+<!-- CSS tambahan -->
+<style>
+    .alert-info {
+        border: none;
+        font-family: 'Poppins', sans-serif;
+        font-size: 15px;
+        transition: all 0.2s ease;
+    }
+    .alert-info:hover {
+        transform: scale(1.01);
+        box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+    }
+</style>
+{% endblock %}

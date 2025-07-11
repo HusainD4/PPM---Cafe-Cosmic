@@ -1,0 +1,74 @@
+{% extends 'admin/base.html' %}
+{% block title %}Manajemen Best Seller{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Daftar Produk Best Seller</h2>
+
+    <a href="{{ url_for('tambah_best_seller') }}" class="btn btn-success mb-3">
+        <i class="fas fa-plus"></i> Tambah Best Seller
+    </a>
+
+    <div style="overflow-x: auto;">
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>No</th>
+                    <th>Nama Produk</th>
+                    <th>Harga (Rp)</th>
+                    <th>Gambar</th>
+                    <th>Deskripsi</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produk in best_seller %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ produk['nama'] }}</td>
+                    <td>{{ "{:,.0f}".format(produk['harga'] | int).replace(',', '.') }}</td>
+                    <td>
+                        {% if produk['gambar'] %}
+                        <img src="{{ produk['gambar'] }}"
+                             alt="gambar"
+                             width="100"
+                             style="pointer-events: none; user-select: none;"
+                             oncontextmenu="return false;"
+                             ondragstart="return false;"
+                             onerror="this.onerror=null; this.src='https://via.placeholder.com/100?text=No+Image';">
+                        {% else %}
+                        <img src="https://via.placeholder.com/100?text=No+Image"
+                             alt="No Image"
+                             width="100"
+                             style="pointer-events: none; user-select: none;"
+                             oncontextmenu="return false;"
+                             ondragstart="return false;">
+                        {% endif %}
+                    </td>
+                    <td>{{ produk['deskripsi'] }}</td>
+                    <td style="text-align: center; vertical-align: middle;">
+                        <a href="{{ url_for('update_best_seller', id=produk['id']) }}" 
+                           class="btn btn-warning btn-sm" 
+                           style="margin: 5px;">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{{ url_for('hapus_best_seller', id=produk['id']) }}"
+                           class="btn btn-danger btn-sm" 
+                           style="margin: 5px;"
+                           onclick="return confirm('Yakin ingin menghapus produk ini?')">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center">Belum ada produk best seller.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <br><br><br>  
+</div>
+{% endblock %}
